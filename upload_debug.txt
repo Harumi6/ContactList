@@ -1,0 +1,60 @@
+2026-06-30 11:50:12
+Error: The filetype you are attempting to upload is not allowed.
+Files array: Array
+(
+    [picture] => Array
+        (
+            [name] => images.jpg
+            [type] => image/jpeg
+            [tmp_name] => C:\xampp\tmp\php958C.tmp
+            [error] => 0
+            [size] => 29730
+        )
+
+)
+
+2026-06-30 11:50:22
+Error: The filetype you are attempting to upload is not allowed.
+Files array: Array
+(
+    [picture] => Array
+        (
+            [name] => images.jpg
+            [type] => image/jpeg
+            [tmp_name] => C:\xampp\tmp\phpBD1A.tmp
+            [error] => 0
+            [size] => 29730
+        )
+
+)
+
+2026-06-30 11:52:13
+Error: The filetype you are attempting to upload is not allowed.
+Files array: Array
+(
+    [picture] => Array
+        (
+            [name] => images.jpg
+            [type] => image/jpeg
+            [tmp_name] => C:\xampp\tmp\php702A.tmp
+            [error] => 0
+            [size] => 29730
+        )
+
+)
+
+2026-06-30 11:52:22
+Error: The filetype you are attempting to upload is not allowed.
+Files array: Array
+(
+    [picture] => Array
+        (
+            [name] => images.jpg
+            [type] => image/jpeg
+            [tmp_name] => C:\xampp\tmp\php9353.tmp
+            [error] => 0
+            [size] => 29730
+        )
+
+)
+
