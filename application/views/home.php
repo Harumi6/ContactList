@@ -247,7 +247,7 @@
           <!-- Right: Search Form -->
           <form class="form-inline ml-auto my-auto">
             <div class="form-group position-relative">
-              <input class="form-control form-control-sm mr-2 w-100" type="search" placeholder="Search Employee Name" aria-label="Search" id="SearchBar" style="max-width: 250px; background-color: #f8f9fa; border: 1px solid #ced4da; border-radius: 4px; padding-left: 10px;" autocomplete="off">
+              <input class="form-control form-control-sm mr-2 w-100" type="search" placeholder="Search Name, EmpID, Tel, Email..." aria-label="Search" id="SearchBar" style="max-width: 250px; background-color: #f8f9fa; border: 1px solid #ced4da; border-radius: 4px; padding-left: 10px;" autocomplete="off">
               <div id="searchResults" class="dropdown-menu w-100" style="max-width: 250px !important; display: none; position: absolute; top: calc(100% + 5px); left: 0; max-height: 300px; overflow-y: auto; z-index: 1050; padding: 0.5rem 0; border-radius: 8px; border: 1px solid #e2e8f0; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);"></div>
             </div>
             <button class="btn btn-sm btn-secondary" type="button" id="SearchButton">
@@ -328,7 +328,7 @@
                   <th>EmpID</th>
                   <th>Name</th>
                   <th>Position</th>
-                  <!-- <th>Mobile No.</th> -->
+                  <th>Mobile No.</th>
                   <th>Internal No.</th>
                   <th>Email</th>
                 </tr>
@@ -350,7 +350,7 @@
                     // ----------------------------------------------------
                     if (!empty($row->FuncName) && $row->FuncName !== $current_function) {
                       echo '<tr class="tr-function">';
-                      echo '<td colspan="5" style="border: 1px solid #6c757d;">Function : ' . html_escape($row->FuncName) . '</td>';
+                      echo '<td colspan="6" style="border: 1px solid #6c757d;">Function : ' . html_escape($row->FuncName) . '</td>';
                       echo '</tr>';
 
                       $current_function = $row->FuncName;
@@ -365,7 +365,7 @@
                     if ($row->OrganizeLevel >= 2) {
                       if (!empty($row->DeptName) && $row->DeptName !== $current_department) {
                         echo '<tr class="tr-department">';
-                        echo '<td colspan="5" style="padding-left: 20px; border: 1px solid #6c757d;">↳ Department : ' . html_escape($row->DeptName) . '</td>';
+                        echo '<td colspan="6" style="padding-left: 20px; border: 1px solid #6c757d;">↳ Department : ' . html_escape($row->DeptName) . '</td>';
                         echo '</tr>';
 
                         $current_department = $row->DeptName;
@@ -376,7 +376,7 @@
                     if ($row->OrganizeLevel >= 3) {
                       if (!empty($row->SecName) && $row->SecName !== $current_section) {
                         echo '<tr class="tr-section">';
-                        echo '<td colspan="5" style="padding-left: 40px; border: 1px solid #6c757d;">↳ Section : ' . html_escape($row->SecName) . '</td>';
+                        echo '<td colspan="6" style="padding-left: 40px; border: 1px solid #6c757d;">↳ Section : ' . html_escape($row->SecName) . '</td>';
                         echo '</tr>';
 
                         $current_section = $row->SecName;
@@ -395,7 +395,7 @@
                     } else {
                       echo '<td id="position">' . html_escape($row->Position) . '</td>';
                     }
-                    // echo '<td id="mobile">' . html_escape($row->MobilePhone) . '</td>';
+                    echo '<td id="mobile">' . html_escape($row->MobilePhone) . '</td>';
                     $telDisplay = html_escape($row->TelePhone);
                     if (!empty($row->internal_no)) {
                         $telDisplay .= ($telDisplay !== '' ? ' ' : '') . html_escape($row->internal_no);
@@ -417,7 +417,7 @@
                       if ($row->FuncName !== $current_function) {
                         $funcDisplay = !empty($row->FuncName) ? html_escape($row->FuncName) : '(ไม่ระบุ)';
                         echo '<tr class="tr-function">';
-                        echo '<td colspan="5" style="border: 1px solid #6c757d;">Function : ' . $funcDisplay . '</td>';
+                        echo '<td colspan="6" style="border: 1px solid #6c757d;">Function : ' . $funcDisplay . '</td>';
                         echo '</tr>';
                         $current_function = $row->FuncName;
                         $current_department = null;
@@ -427,7 +427,7 @@
                       if ($row->DeptName !== $current_department) {
                         $deptDisplay = !empty($row->DeptName) ? html_escape($row->DeptName) : '(ไม่ระบุ)';
                         echo '<tr class="tr-department">';
-                        echo '<td colspan="5" style="padding-left: 20px; border: 1px solid #6c757d;">↳ Department : ' . $deptDisplay . '</td>';
+                        echo '<td colspan="6" style="padding-left: 20px; border: 1px solid #6c757d;">↳ Department : ' . $deptDisplay . '</td>';
                         echo '</tr>';
                         $current_department = $row->DeptName;
                         $current_section = null;
@@ -436,7 +436,7 @@
                       if ($row->SecName !== $current_section) {
                         $secDisplay = !empty($row->SecName) ? html_escape($row->SecName) : '(ไม่ระบุ)';
                         echo '<tr class="tr-section" style="background-color: #f1f3f5;">';
-                        echo '<td colspan="5" style="padding-left: 40px; border: 1px solid #6c757d;">↳ Section : ' . $secDisplay . '</td>';
+                        echo '<td colspan="6" style="padding-left: 40px; border: 1px solid #6c757d;">↳ Section : ' . $secDisplay . '</td>';
                         echo '</tr>';
                         $current_section = $row->SecName;
                       }
@@ -444,7 +444,7 @@
                   else:
                 ?>
                     <tr>
-                      <td colspan="5" class="text-center">No data found.</td>
+                      <td colspan="6" class="text-center">No data found.</td>
                     </tr>
                 <?php
                   endif;
@@ -559,6 +559,9 @@
 
         // 1. กำหนดความกว้างของคอลัมน์ (Column Widths) แบบเป๊ะๆ
         ws.columns = [{
+            width: 15
+          }, // EmpID
+          {
             width: 45
           }, // Name / Hierarchy
           {
@@ -587,7 +590,7 @@
 
           var excelRow = ws.addRow(rowData);
 
-          // 2. จัดการ Merge Cells สำหรับแถว Function, Department, Section (colspan="5")
+          // 2. จัดการ Merge Cells สำหรับแถว Function, Department, Section (colspan="6")
           if (tr.cells.length === 1 && tr.cells[0].colSpan > 1) {
             var endCol = tr.cells[0].colSpan;
             ws.mergeCells(excelRow.number, 1, excelRow.number, endCol);
@@ -755,11 +758,11 @@
         $tbody.empty();
 
         if (status === 'error' || status === 'empty') {
-          $tbody.html('<tr><td colspan="5" class="text-center">No data found.</td></tr>');
+          $tbody.html('<tr><td colspan="6" class="text-center">No data found.</td></tr>');
           return;
         }
         if (dataArray.length === 0) {
-          $tbody.html('<tr><td colspan="5" class="text-center">No employee found.</td></tr>');
+          $tbody.html('<tr><td colspan="6" class="text-center">No employee found.</td></tr>');
           return;
         }
 
@@ -770,20 +773,20 @@
           $.each(dataArray, function(i, row) {
             if (row.FuncName !== curFunc) {
               var fDisplay = row.FuncName ? escapeHtml(row.FuncName) : '(ไม่ระบุ)';
-              html += '<tr class="tr-function"><td colspan="5" style="border: 1px solid #6c757d;">Function : ' + fDisplay + '</td></tr>';
+              html += '<tr class="tr-function"><td colspan="6" style="border: 1px solid #6c757d;">Function : ' + fDisplay + '</td></tr>';
               curFunc = row.FuncName;
               curDept = null;
               curSec = null;
             }
             if (row.DeptName !== curDept) {
               var dDisplay = row.DeptName ? escapeHtml(row.DeptName) : '(ไม่ระบุ)';
-              html += '<tr class="tr-department" style="background-color: #f8f9fa;"><td colspan="5" style="padding-left: 20px; border: 1px solid #6c757d;">↳ Department : ' + dDisplay + '</td></tr>';
+              html += '<tr class="tr-department" style="background-color: #f8f9fa;"><td colspan="6" style="padding-left: 20px; border: 1px solid #6c757d;">↳ Department : ' + dDisplay + '</td></tr>';
               curDept = row.DeptName;
               curSec = null;
             }
             if (row.SecName !== curSec) {
               var sDisplay = row.SecName ? escapeHtml(row.SecName) : '(ไม่ระบุ)';
-              html += '<tr class="tr-section"><td colspan="5" style="padding-left: 40px; border: 1px solid #6c757d;">↳ Section : ' + sDisplay + '</td></tr>';
+              html += '<tr class="tr-section"><td colspan="6" style="padding-left: 40px; border: 1px solid #6c757d;">↳ Section : ' + sDisplay + '</td></tr>';
               curSec = row.SecName;
             }
           });
@@ -794,21 +797,21 @@
         // Normal display
         $.each(dataArray, function(i, row) {
           if (row.FuncName && row.FuncName !== curFunc) {
-            html += '<tr class="tr-function"><td colspan="5" style="border: 1px solid #6c757d;">Function : ' + escapeHtml(row.FuncName) + '</td></tr>';
+            html += '<tr class="tr-function"><td colspan="6" style="border: 1px solid #6c757d;">Function : ' + escapeHtml(row.FuncName) + '</td></tr>';
             curFunc = row.FuncName;
             curDept = null;
             curSec = null;
           }
           if (parseInt(row.OrganizeLevel) >= 2) {
             if (row.DeptName && row.DeptName !== curDept) {
-              html += '<tr class="tr-department" style="background-color: #f8f9fa;"><td colspan="5" style="padding-left: 20px; border: 1px solid #6c757d;">↳ Department : ' + escapeHtml(row.DeptName) + '</td></tr>';
+              html += '<tr class="tr-department" style="background-color: #f8f9fa;"><td colspan="6" style="padding-left: 20px; border: 1px solid #6c757d;">↳ Department : ' + escapeHtml(row.DeptName) + '</td></tr>';
               curDept = row.DeptName;
               curSec = null;
             }
           }
           if (parseInt(row.OrganizeLevel) >= 3) {
             if (row.SecName && row.SecName !== curSec) {
-              html += '<tr class="tr-section"><td colspan="5" style="padding-left: 40px; border: 1px solid #6c757d;">↳ Section : ' + escapeHtml(row.SecName) + '</td></tr>';
+              html += '<tr class="tr-section"><td colspan="6" style="padding-left: 40px; border: 1px solid #6c757d;">↳ Section : ' + escapeHtml(row.SecName) + '</td></tr>';
               curSec = row.SecName;
             }
           }
@@ -824,9 +827,11 @@
             }
             html += '<td id="position">' + escapeHtml(displayPos) + '</td>';
             
+            html += '<td id="mobile">' + escapeHtml(row.MobilePhone || '') + '</td>';
+            
             var telDisplay = escapeHtml(row.TelePhone || '');
             if (row.internal_no && row.internal_no.trim() !== '') {
-              telDisplay += (telDisplay !== '' ? ' / ' : '') + escapeHtml(row.internal_no);
+              telDisplay += (telDisplay !== '' ? ' ' : '') + escapeHtml(row.internal_no);
             }
             html += '<td>' + telDisplay + '</td>';
             
@@ -853,14 +858,24 @@
           }
           var matchKeyword = true;
           if (keyword.length > 0) {
-            var fullEng = (row.Fullname || '').toLowerCase();
+            var fullEng  = (row.Fullname || '').toLowerCase();
             var fullThai = (row.ThaiName || '').toLowerCase();
+            var empId    = (row.UserLogOn || '').toLowerCase();
+            var mobile   = (row.MobilePhone || '').toLowerCase();
+            var internal = (row.internal_no || '').toLowerCase();
+            var tel      = (row.TelePhone || '').toLowerCase();
+            var email    = (row.EmailAddress || '').toLowerCase();
             var funcName = (row.FuncName || '').toLowerCase();
             var deptName = (row.DeptName || '').toLowerCase();
-            var secName = (row.SecName || '').toLowerCase();
+            var secName  = (row.SecName || '').toLowerCase();
             
             matchKeyword = fullEng.includes(keyword) || 
                            fullThai.includes(keyword) || 
+                           empId.includes(keyword) || 
+                           mobile.includes(keyword) || 
+                           internal.includes(keyword) || 
+                           tel.includes(keyword) || 
+                           email.includes(keyword) || 
                            funcName.includes(keyword) || 
                            deptName.includes(keyword) || 
                            secName.includes(keyword);
@@ -883,7 +898,7 @@
         if (!isSilent) {
           // แสดงกำลังโหลดทันทีก่อนส่ง AJAX
           $('#fullScreenLoader').css('display', 'flex');
-          $('#example1 tbody').html('<tr><td colspan="5" class="text-center"><i class="fas fa-spinner fa-spin"></i> กำลังโหลดข้อมูล...</td></tr>');
+          $('#example1 tbody').html('<tr><td colspan="6" class="text-center"><i class="fas fa-spinner fa-spin"></i> กำลังโหลดข้อมูล...</td></tr>');
         }
 
         $.ajax({
@@ -948,7 +963,7 @@
         // แสดงหน้าจอโหลด
         $('#fullScreenLoader').css('display', 'flex');
         $('#dept').html('<option selected>-All-</option>');
-        $('#example1 tbody').html('<tr><td colspan="5" class="text-center"><i class="fas fa-spinner fa-spin"></i> กำลังโหลดข้อมูล...</td></tr>');
+        $('#example1 tbody').html('<tr><td colspan="6" class="text-center"><i class="fas fa-spinner fa-spin"></i> กำลังโหลดข้อมูล...</td></tr>');
 
         // 2. โหลดข้อมูลแผนกแบบ Asynchronous
         $.ajax({
@@ -1011,19 +1026,33 @@
                 $.each(res, function(index, emp) {
                   var regex = new RegExp("(" + keyword + ")", "gi");
                   // ป้องกัน Error กรณีที่ Fullname หรือ ThaiName เป็น null
-                  var fName = emp.Fullname || '';
-                  var tName = emp.ThaiName || '';
+                  var fName    = emp.Fullname || '';
+                  var tName    = emp.ThaiName || '';
+                  var empId    = emp.UserLogOn || '';
+                  var mobile   = emp.MobilePhone || '';
+                  var internal = emp.internal_no || '';
+                  var email    = emp.EmailAddress || '';
 
                   // ใช้ span สีฟ้าขีดเส้นใต้ให้ดูโมเดิร์นขึ้น
                   var highlightFormat = "<span class='text-primary font-weight-bold' style='text-decoration: underline; text-decoration-thickness: 2px;'>$1</span>";
                   var displayFullname = fName ? fName.replace(regex, highlightFormat) : '';
                   var displayThaiName = tName ? tName.replace(regex, highlightFormat) : '';
 
+                  var subDetails = [];
+                  if (empId) subDetails.push('ID: ' + empId.replace(regex, highlightFormat));
+                  if (mobile) subDetails.push('Mob: ' + mobile.replace(regex, highlightFormat));
+                  if (internal) subDetails.push('Ext: ' + internal.replace(regex, highlightFormat));
+                  if (email) subDetails.push(email.replace(regex, highlightFormat));
+
                   var displayText = '<div class="d-flex align-items-center">';
                   displayText += '<div class="mr-2 text-secondary"><i class="fas fa-user-circle"></i></div>';
-                  displayText += '<div>' + displayFullname;
+                  displayText += '<div><div>' + displayFullname;
                   if (displayThaiName) {
                     displayText += ' <small class="text-muted">(' + displayThaiName + ')</small>';
+                  }
+                  displayText += '</div>';
+                  if (subDetails.length > 0) {
+                    displayText += '<div class="text-muted" style="font-size: 0.75rem;">' + subDetails.join(' | ') + '</div>';
                   }
                   displayText += '</div></div>';
 

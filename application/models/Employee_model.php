@@ -18,7 +18,7 @@ class Employee_model extends CI_Model
                   THEN 'Top Management' ELSE V.FuncName END AS FuncName, 
              V.DeptName, V.SecName, V.UserID, V.Fullname, V.ThaiName, V.Position, 
              CASE WHEN V.EmailAddress LIKE '%@sapsf.com' THEN NULL ELSE V.EmailAddress END AS EmailAddress, 
-             V.TelePhone, T.UserStatus, T.UserLogOn, T.MobilePhone, V.OrganizeLevel, V.OrganizeOrder,
+             V.TelePhone, T.UserStatus, T.UserLogOn, ISNULL(I.telephone, T.MobilePhone) AS MobilePhone, V.OrganizeLevel, V.OrganizeOrder,
              I.internal_no
              FROM VwShowData V 
              JOIN TbContactUser T ON V.UserID = T.UserID 
@@ -36,7 +36,7 @@ class Employee_model extends CI_Model
              (Fname_EN + ' ' + Lname_EN) AS Fullname, (Fname_TH + ' ' + Lname_TH) AS ThaiName, 
              PositionLevel AS Position, 
              CASE WHEN VSF.Email LIKE '%@sapsf.com' THEN NULL ELSE VSF.Email END AS EmailAddress, 
-             NULL AS TelePhone, EmpStatus AS UserStatus, EmpID AS UserLogOn, VSF.MobilePhone, 
+             NULL AS TelePhone, EmpStatus AS UserStatus, EmpID AS UserLogOn, I.telephone AS MobilePhone, 
              ISNULL(P.OrganizeLevel, '9') AS OrganizeLevel, 
              ISNULL(P.OrganizeOrder, '99') AS OrganizeOrder,
              I.internal_no
@@ -101,7 +101,13 @@ class Employee_model extends CI_Model
             $safe_eng = "N" . $this->db->escape('%' . $keyword_lower . '%');
             $safe_thai = "N" . $this->db->escape('%' . $keyword . '%');
 
-            $sql .= " AND (LOWER(Fullname) LIKE $safe_eng OR ThaiName LIKE $safe_thai)";
+            $sql .= " AND (LOWER(Fullname) LIKE $safe_eng 
+                      OR ThaiName LIKE $safe_thai 
+                      OR LOWER(UserLogOn) LIKE $safe_eng 
+                      OR LOWER(EmailAddress) LIKE $safe_eng 
+                      OR LOWER(MobilePhone) LIKE $safe_eng 
+                      OR LOWER(internal_no) LIKE $safe_eng 
+                      OR LOWER(TelePhone) LIKE $safe_eng)";
         }
 
         $sql .= " ORDER BY CASE WHEN FuncName = 'Top Management' THEN 0 ELSE 1 END ASC,
@@ -118,7 +124,7 @@ class Employee_model extends CI_Model
     }
 
     /**
-     * ค้นหาพนักงานจากชื่อภาษาไทยและภาษาอังกฤษ
+     * ค้นหาพนักงานจากชื่อ ภาษาไทย, ภาษาอังกฤษ, EmpID, Email, MobilePhone, internal_no
      */
     public function search_employees_by_name($company_name, $keyword)
     {
@@ -128,10 +134,16 @@ class Employee_model extends CI_Model
         $safe_eng = "N" . $this->db->escape('%' . $keyword_lower . '%');
         $safe_thai = "N" . $this->db->escape('%' . $keyword . '%');
 
-        $sql = "SELECT DISTINCT Fullname, ThaiName 
+        $sql = "SELECT DISTINCT Fullname, ThaiName, UserLogOn, EmailAddress, MobilePhone, internal_no, TelePhone 
                 FROM $union_sql AS Combined 
                 WHERE Company = ? 
-                AND (LOWER(Fullname) LIKE $safe_eng OR ThaiName LIKE $safe_thai)";
+                AND (LOWER(Fullname) LIKE $safe_eng 
+                  OR ThaiName LIKE $safe_thai 
+                  OR LOWER(UserLogOn) LIKE $safe_eng 
+                  OR LOWER(EmailAddress) LIKE $safe_eng 
+                  OR LOWER(MobilePhone) LIKE $safe_eng 
+                  OR LOWER(internal_no) LIKE $safe_eng 
+                  OR LOWER(TelePhone) LIKE $safe_eng)";
 
         // เนื่องจาก query builder limit ใช้ยากร่วมกับ string SQL
         $sql .= " ORDER BY Fullname OFFSET 0 ROWS FETCH NEXT 15 ROWS ONLY";

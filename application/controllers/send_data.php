@@ -353,14 +353,14 @@ class send_data extends CI_Controller
         }
 
         $internal_no = $this->input->post('internal_no', TRUE);
+        $mobile_phone = $this->input->post('mobile_phone', TRUE);
         $success = true;
 
         if ($employee_id) {
             $data = [
                 'ThaiName'    => $this->input->post('thainame', TRUE),
                 'Fullname'    => $this->input->post('fullname', TRUE),
-                'MobilePhone' => $this->input->post('mobile_phone', TRUE),
-                'TelePhone'   => $this->input->post('telephone', TRUE)
+                'MobilePhone' => $mobile_phone
             ];
 
             $this->db->where('UserID', $employee_id);
@@ -373,11 +373,15 @@ class send_data extends CI_Controller
             $q = $this->db->get('TbInternal');
             if ($q->num_rows() > 0) {
                 $this->db->where('Email', $employee->EmailAddress);
-                $this->db->update('TbInternal', ['internal_no' => $internal_no]);
+                $this->db->update('TbInternal', [
+                    'internal_no' => $internal_no,
+                    'telephone'   => $mobile_phone
+                ]);
             } else {
                 $this->db->insert('TbInternal', [
-                    'Email' => $employee->EmailAddress,
-                    'internal_no' => $internal_no
+                    'Email'       => $employee->EmailAddress,
+                    'internal_no' => $internal_no,
+                    'telephone'   => $mobile_phone
                 ]);
             }
 

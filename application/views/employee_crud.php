@@ -100,8 +100,8 @@
                     <!-- Default picture handling -->
                     <div style="width: 120px; height: 120px; border-radius: 50%; overflow: hidden; display: inline-flex; align-items: center; justify-content: center; border: 3px solid #dee2e6; background-color: #f8f9fa; margin: 0 auto;">
                       <?php
-                        $image_path = FCPATH . 'assets/uploads/employee/' . $username . '.jpg';
-                        if (file_exists($image_path)):
+                      $image_path = FCPATH . 'assets/uploads/employee/' . $username . '.jpg';
+                      if (file_exists($image_path)):
                       ?>
                         <img class="profile-user-img img-fluid"
                           src="<?= base_url('assets/uploads/employee/' . $username . '.jpg') ?>"
@@ -130,8 +130,8 @@
                       </div>
 
                       <div class="form-group mb-2">
-                        <label class="mb-1"><small><i class="fas fa-mobile-alt mr-1"></i> Mobile Phone</small></label>
-                        <input type="text" class="form-control form-control-sm" name="mobile_phone" value="<?= isset($employee->MobilePhone) ? html_escape($employee->MobilePhone) : '' ?>" placeholder="กรอกเบอร์มือถือ" readonly>
+                        <label class="mb-1"><small><i class="fas fa-mobile-alt mr-1"></i> Mobile Phone (เบอร์มือถือ) <span class="text-danger">* ท่านยินดีให้เบอร์มือถือของท่านนั้นแสดงใน ContactList</span></small></label>
+                        <input type="text" class="form-control form-control-sm" name="mobile_phone" value="<?= isset($employee->MobilePhone) ? html_escape($employee->MobilePhone) : '' ?>" placeholder="กรอกเบอร์มือถือ">
                       </div>
 
                       <div class="form-group mb-3">
@@ -201,7 +201,7 @@
         var formData = $(this).serialize();
         var $btn = $(this).find('button[type="submit"]');
         var originalHtml = $btn.html();
-        
+
         $btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin mr-1"></i> กำลังบันทึก...');
 
         $.ajax({
