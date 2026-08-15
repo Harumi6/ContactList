@@ -69,12 +69,14 @@ class Employee_model extends CI_Model
                 WHERE Company = ? 
                 ORDER BY CASE WHEN FuncName = 'Top Management' THEN 0 ELSE 1 END ASC,
                          FuncName ASC, 
-                         CASE WHEN OrganizeLevel = '1' THEN 0 ELSE 1 END ASC,
+                         CASE WHEN ISNULL(TRY_CAST(OrganizeLevel AS INT), 99) <= 1 THEN 0 ELSE 1 END ASC,
                          DeptName ASC,
                          CASE WHEN OrganizeLevel = '2' THEN 0 ELSE 1 END ASC,
                          SecName ASC,
                          CASE WHEN OrganizeLevel = '3' THEN 0 ELSE 1 END ASC,
-                         OrganizeLevel ASC, OrganizeOrder ASC, Fullname ASC";
+                         ISNULL(TRY_CAST(OrganizeLevel AS INT), 99) ASC, 
+                         ISNULL(TRY_CAST(OrganizeOrder AS INT), 99) ASC, 
+                         Fullname ASC";
 
         $query = $this->db->query($sql, array($company_name));
         return $query->result();
@@ -112,12 +114,14 @@ class Employee_model extends CI_Model
 
         $sql .= " ORDER BY CASE WHEN FuncName = 'Top Management' THEN 0 ELSE 1 END ASC,
                          FuncName ASC, 
-                         CASE WHEN OrganizeLevel = '1' THEN 0 ELSE 1 END ASC,
+                         CASE WHEN ISNULL(TRY_CAST(OrganizeLevel AS INT), 99) <= 1 THEN 0 ELSE 1 END ASC,
                          DeptName ASC,
                          CASE WHEN OrganizeLevel = '2' THEN 0 ELSE 1 END ASC,
                          SecName ASC,
                          CASE WHEN OrganizeLevel = '3' THEN 0 ELSE 1 END ASC,
-                         OrganizeLevel ASC, OrganizeOrder ASC, Fullname ASC";
+                         ISNULL(TRY_CAST(OrganizeLevel AS INT), 99) ASC, 
+                         ISNULL(TRY_CAST(OrganizeOrder AS INT), 99) ASC, 
+                         Fullname ASC";
 
         $query = $this->db->query($sql, $params);
         return $query->result();
