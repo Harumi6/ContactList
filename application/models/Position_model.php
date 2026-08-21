@@ -1,16 +1,22 @@
 <?php
-defined('BASEPATH') or exit('No direct script access allowed');
+defined('BASEPATH') OR exit('No direct script access allowed');
 
+/**
+ * Position_model
+ * จัดการข้อมูลตำแหน่ง (TbPosition) และระดับ OrganizeLevel / OrganizeOrder
+ *
+ * @property CI_DB_query_builder $db
+ */
 class Position_model extends CI_Model
 {
-    public function __construct()
-    {
-        parent::__construct();
-        $this->load->database();
-    }
+    // ==========================================
+    // DATA RETRIEVAL METHODS
+    // ==========================================
 
     /**
      * ดึงข้อมูล Position ทั้งหมด
+     *
+     * @return array
      */
     public function get_all_positions()
     {
@@ -18,12 +24,13 @@ class Position_model extends CI_Model
         $this->db->from('TbPosition');
         $this->db->order_by('OrganizeLevel', 'ASC');
         $this->db->order_by('OrganizeOrder', 'ASC');
-        $query = $this->db->get();
-        return $query->result();
+        return $this->db->get()->result();
     }
 
     /**
      * ดึง OrganizeLevel แบบไม่ซ้ำเพื่อทำ Dropdown
+     *
+     * @return array
      */
     public function get_organize_levels()
     {
@@ -32,12 +39,14 @@ class Position_model extends CI_Model
         $this->db->where('OrganizeLevel IS NOT NULL');
         $this->db->group_by(array('OrganizeLevel', 'LevelNameEN', 'LevelNameTH'));
         $this->db->order_by('OrganizeLevel', 'ASC');
-        $query = $this->db->get();
-        return $query->result();
+        return $this->db->get()->result();
     }
 
     /**
      * ดึง OrganizeOrder ตาม OrganizeLevel
+     *
+     * @param string|int $level
+     * @return array
      */
     public function get_orders_by_level($level)
     {
@@ -47,12 +56,16 @@ class Position_model extends CI_Model
         $this->db->where('OrganizeOrder IS NOT NULL');
         $this->db->group_by('OrganizeOrder');
         $this->db->order_by('OrganizeOrder', 'ASC');
-        $query = $this->db->get();
-        return $query->result();
+        return $this->db->get()->result();
     }
 
     /**
      * ตรวจสอบว่า OrganizeOrder ซ้ำกับที่มีอยู่หรือไม่
+     *
+     * @param string|int $level
+     * @param string|int $order
+     * @param int|null $exclude_id
+     * @return bool
      */
     public function check_duplicate_order($level, $order, $exclude_id = null)
     {
@@ -64,14 +77,20 @@ class Position_model extends CI_Model
         if ($exclude_id !== null) {
             $this->db->where('PositionID !=', $exclude_id);
         }
-        $query = $this->db->get('TbPosition');
-        return $query->num_rows() > 0;
+        return $this->db->get('TbPosition')->num_rows() > 0;
     }
 
+    // ==========================================
+    // DATA MUTATION METHODS (INSERT / UPDATE / DELETE)
+    // ==========================================
+
     /**
-     * เพิ่มข้อมูล Position
+     * เพิ่มข้อมูล Position ใหม่
+     *
+     * @param array $data
+     * @return bool
      */
-    public function insert_position($data)
+    public function insert_position(array $data)
     {
         $db_debug = $this->db->db_debug;
         $this->db->db_debug = FALSE;
@@ -82,8 +101,12 @@ class Position_model extends CI_Model
 
     /**
      * อัปเดตข้อมูล Position
+     *
+     * @param int $position_id
+     * @param array $data
+     * @return bool
      */
-    public function update_position($position_id, $data)
+    public function update_position($position_id, array $data)
     {
         $db_debug = $this->db->db_debug;
         $this->db->db_debug = FALSE;
@@ -95,6 +118,9 @@ class Position_model extends CI_Model
 
     /**
      * ลบข้อมูล Position
+     *
+     * @param int $position_id
+     * @return bool
      */
     public function delete_position($position_id)
     {

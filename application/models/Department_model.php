@@ -1,13 +1,22 @@
 <?php
+defined('BASEPATH') OR exit('No direct script access allowed');
 
 /**
- * @property mixed $db
+ * Department_model
+ * จัดการข้อมูลแผนก (TbDepartment) และโครงสร้างองค์กร
+ *
+ * @property CI_DB_query_builder $db
  */
 class Department_model extends CI_Model
 {
+    // ==========================================
+    // DATA RETRIEVAL METHODS
+    // ==========================================
+
     /**
      * ดึง Department ทั้งหมด พร้อม JOIN ผ่าน TbFunction → TbCompany
-     * เรียงตาม DeptName, SecName
+     *
+     * @return array
      */
     public function get_department_by_company()
     {
@@ -16,13 +25,15 @@ class Department_model extends CI_Model
         $this->db->join('TbFunction', 'TbDepartment.FuncID = TbFunction.FuncID', 'left');
         $this->db->join('TbCompany', 'TbFunction.CompanyID = TbCompany.CompanyID', 'left');
         $this->db->order_by('TbDepartment.DeptName', 'ASC');
-        $query = $this->db->get();
-        return $query->result();
+        return $this->db->get()->result();
     }
 
     /**
      * ดึง FuncName (สายงาน) ตามชื่อบริษัท
-     * ใช้สำหรับ dropdown "Department" ซึ่งจริงๆ แสดง Function names
+     * ใช้สำหรับ Dropdown "Function" บนหน้าเว็บหลัก
+     *
+     * @param string $company_name
+     * @return array
      */
     public function get_department_by_company_name($company_name)
     {
@@ -46,14 +57,16 @@ class Department_model extends CI_Model
                 WHERE FuncName IS NOT NULL AND LTRIM(RTRIM(FuncName)) <> ''
                 GROUP BY FuncName
                 ORDER BY CASE WHEN FuncName = 'Top Management' THEN 0 ELSE 1 END ASC, FuncName ASC";
-                
-        $query = $this->db->query($sql, array($company_name, $company_name));
-        return $query->result();
+
+        return $this->db->query($sql, array($company_name, $company_name))->result();
     }
 
     /**
      * ดึงโครงสร้างองค์กร Function → Department → Section ตามชื่อบริษัท
-     * ใช้แสดงโครงสร้างแม้ไม่มีพนักงาน
+     * ใช้แสดงโครงสร้างกรณีไม่มีข้อมูลพนักงาน
+     *
+     * @param string $company_name
+     * @return array
      */
     public function get_org_structure_by_company_name($company_name)
     {
@@ -88,15 +101,15 @@ class Department_model extends CI_Model
                 FROM ($sql1 UNION $sql2 UNION $sql3) AS Combined 
                 WHERE Company = ?
                 ORDER BY CASE WHEN FuncName = 'Top Management' THEN 0 ELSE 1 END ASC, FuncName ASC, DeptName ASC, SecName ASC";
-                
-        $query = $this->db->query($sql, array($company_name, $company_name, $company_name, $company_name));
-        return $query->result();
+
+        return $this->db->query($sql, array($company_name, $company_name, $company_name, $company_name))->result();
     }
 
-
     /**
-     * ดึงข้อมูล Department ทั้งหมด (รวมที่ Inactive) เพื่อนำมาแสดงในตารางให้ Admin จัดการ
-     * Join กับ TbFunction และ TbCompany เพื่อดึงชื่อ
+     * ดึงข้อมูล Department สำหรับหน้า Admin ตามบริษัท
+     *
+     * @param int $company_id
+     * @return array
      */
     public function admin_get_departments_by_company($company_id)
     {
@@ -108,15 +121,40 @@ class Department_model extends CI_Model
         $this->db->or_where('TbCompany.CompanyID IS NULL', NULL, FALSE);
         $this->db->order_by('TbFunction.FuncName', 'ASC');
         $this->db->order_by('TbDepartment.DeptName', 'ASC');
-
-        $query = $this->db->get();
-        return $query->result();
+        return $this->db->get()->result();
     }
+
+    // ==========================================
+    // DROPDOWN & HELPER METHODS
+    // ==========================================
+
+    /**
+     * ดึงข้อมูล Department ตาม FuncID สำหรับทำเชื่อมโยง Dropdown
+     *
+     * @param int $func_id
+     * @return array
+     */
+    public function get_departments_by_function($func_id)
+    {
+        $this->db->select('DeptID, DeptName');
+        $this->db->from('TbDepartment');
+        $this->db->where('FuncID', $func_id);
+        $this->db->where('DeptStatus', 1);
+        $this->db->order_by('DeptName', 'ASC');
+        return $this->db->get()->result();
+    }
+
+    // ==========================================
+    // DATA MUTATION METHODS (INSERT / UPDATE / DELETE)
+    // ==========================================
 
     /**
      * เพิ่มข้อมูล Department ใหม่
+     *
+     * @param array $data
+     * @return bool
      */
-    public function insert_department($data)
+    public function insert_department(array $data)
     {
         $db_debug = $this->db->db_debug;
         $this->db->db_debug = FALSE;
@@ -127,8 +165,12 @@ class Department_model extends CI_Model
 
     /**
      * อัปเดต/แก้ไขข้อมูล Department
+     *
+     * @param int $dept_id
+     * @param array $data
+     * @return bool
      */
-    public function update_department($dept_id, $data)
+    public function update_department($dept_id, array $data)
     {
         $db_debug = $this->db->db_debug;
         $this->db->db_debug = FALSE;
@@ -139,31 +181,25 @@ class Department_model extends CI_Model
     }
 
     /**
-     * ลบข้อมูล Department
+     * ลบข้อมูล Department พร้อมทั้งลบ Sections ที่สังกัด
+     *
+     * @param int $dept_id
+     * @return bool
      */
-    public function delete_department($dept_id) {
+    public function delete_department($dept_id)
+    {
         $db_debug = $this->db->db_debug;
         $this->db->db_debug = FALSE;
 
-        // ลบ Sections ทิ้งก่อน
+        // 1. ลบ Sections ภายใต้ Department นี้ก่อน
         $this->db->where('DeptID', $dept_id);
         $this->db->delete('TbSection');
 
+        // 2. ลบ Department
         $this->db->where('DeptID', $dept_id);
         $result = $this->db->delete('TbDepartment');
+
         $this->db->db_debug = $db_debug;
         return $result;
-    }
-
-    /**
-     * ดึงข้อมูล Department ตาม Function สำหรับ Dropdown
-     */
-    public function get_departments_by_function($func_id) {
-        $this->db->where('FuncID', $func_id);
-        $this->db->where('DeptStatus', 1);
-        $this->db->order_by('DeptName', 'ASC');
-        
-        $query = $this->db->get('TbDepartment');
-        return $query->result();
     }
 }

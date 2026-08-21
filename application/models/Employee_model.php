@@ -1,16 +1,28 @@
 <?php
+defined('BASEPATH') OR exit('No direct script access allowed');
 
 /**
- * @property mixed $db
+ * Employee_model
+ * จัดการข้อมูลพนักงานทั้งจาก TbContactUser, EmpFromSF$ (VwShowDataSuccessFactor) และ TbInternal
+ *
+ * @property CI_DB_query_builder $db
  */
 class Employee_model extends CI_Model
 {
+    // ==========================================
+    // CORE QUERY / UNION HELPER
+    // ==========================================
+
     /**
-     * Helper สำหรับสร้าง Subquery ของข้อมูลพนักงานจาก 2แหล่ง (VwShowData และ EmpFromSF$)
+     * Helper สำหรับสร้าง Subquery ของข้อมูลพนักงานจาก 3 แหล่ง:
+     * 1. VwShowData (พนักงานใน TbContactUser)
+     * 2. VwShowDataSuccessFactor (พนักงานที่ Sync มาจาก SuccessFactors)
+     * 3. TbFunction / TbDepartment / TbSection (โครงสร้างแผนก)
+     *
+     * @return string
      */
     private function _get_union_sql()
     {
-        // [Tuning 1]: ใน WHERE ตัด LTRIM(RTRIM()) ออก เพื่อให้ Database ใช้ Index ที่คอลัมน์ UserStatus ได้
         $sql1 = "SELECT V.Company, 
              CASE WHEN (V.FuncName IS NULL OR LTRIM(RTRIM(V.FuncName)) = '') 
                    AND (V.DeptName IS NULL OR LTRIM(RTRIM(V.DeptName)) = '') 
@@ -25,7 +37,6 @@ class Employee_model extends CI_Model
              LEFT JOIN TbInternal I ON V.EmailAddress = I.Email
              WHERE T.UserStatus = '1'";
 
-        // [Tuning 2]: เปลี่ยน CAST เป็น NVARCHAR(50) แทน NCHAR(50) เพื่อไม่ให้จองพื้นที่เปล่าๆ ลดการใช้ Memory
         $sql2 = "SELECT 
              CAST(ISNULL(C.Company, VSF.ComCode) AS NVARCHAR(50)) AS Company, 
              CASE WHEN (Division_EN IS NULL OR LTRIM(RTRIM(Division_EN)) = '') 
@@ -58,8 +69,16 @@ class Employee_model extends CI_Model
         $union = "$sql1 UNION ALL $sql2 UNION ALL $sql3";
         return "($union)";
     }
+
+    // ==========================================
+    // DATA RETRIEVAL & SEARCH METHODS
+    // ==========================================
+
     /**
-     * ดึงพนักงานทั้งหมดตามชื่อบริษัท (รองรับข้อมูล 2 แหล่ง)
+     * ดึงพนักงานทั้งหมดตามชื่อบริษัท
+     *
+     * @param string $company_name
+     * @return array
      */
     public function get_employees_by_company_name($company_name)
     {
@@ -78,12 +97,16 @@ class Employee_model extends CI_Model
                          ISNULL(TRY_CAST(OrganizeOrder AS INT), 99) ASC, 
                          Fullname ASC";
 
-        $query = $this->db->query($sql, array($company_name));
-        return $query->result();
+        return $this->db->query($sql, array($company_name))->result();
     }
 
     /**
-     * ค้นหาพนักงานตามบริษัทและสายงาน (สำหรับ AJAX live search)
+     * ค้นหาและกรองพนักงานตามบริษัท, สายงาน และคำค้นหา
+     *
+     * @param string $company_name
+     * @param string|null $func_name
+     * @param string|null $keyword
+     * @return array
      */
     public function get_employees_filtered($company_name, $func_name = null, $keyword = null)
     {
@@ -99,7 +122,6 @@ class Employee_model extends CI_Model
 
         if (!empty($keyword)) {
             $keyword_lower = strtolower($keyword);
-            // ป้องกัน SQL Injection
             $safe_eng = "N" . $this->db->escape('%' . $keyword_lower . '%');
             $safe_thai = "N" . $this->db->escape('%' . $keyword . '%');
 
@@ -123,12 +145,15 @@ class Employee_model extends CI_Model
                          ISNULL(TRY_CAST(OrganizeOrder AS INT), 99) ASC, 
                          Fullname ASC";
 
-        $query = $this->db->query($sql, $params);
-        return $query->result();
+        return $this->db->query($sql, $params)->result();
     }
 
     /**
-     * ค้นหาพนักงานจากชื่อ ภาษาไทย, ภาษาอังกฤษ, EmpID, Email, MobilePhone, internal_no
+     * ค้นหาพนักงานสำหรับ Live Search Autocomplete (จำกัด 15 รายการ)
+     *
+     * @param string $company_name
+     * @param string $keyword
+     * @return array
      */
     public function search_employees_by_name($company_name, $keyword)
     {
@@ -147,29 +172,32 @@ class Employee_model extends CI_Model
                   OR LOWER(EmailAddress) LIKE $safe_eng 
                   OR LOWER(MobilePhone) LIKE $safe_eng 
                   OR LOWER(internal_no) LIKE $safe_eng 
-                  OR LOWER(TelePhone) LIKE $safe_eng)";
+                  OR LOWER(TelePhone) LIKE $safe_eng)
+                ORDER BY Fullname OFFSET 0 ROWS FETCH NEXT 15 ROWS ONLY";
 
-        // เนื่องจาก query builder limit ใช้ยากร่วมกับ string SQL
-        $sql .= " ORDER BY Fullname OFFSET 0 ROWS FETCH NEXT 15 ROWS ONLY";
-
-        $query = $this->db->query($sql, array($company_name));
-        return $query->result();
+        return $this->db->query($sql, array($company_name))->result();
     }
 
     /**
-     * ดึงข้อมูลพนักงานคนเดียวตาม Fullname (เนื่องจากอาจจะไม่มีฟิลด์ UserID ใน View)
+     * ดึงข้อมูลพนักงานคนเดียวตาม Fullname
+     *
+     * @param string $company_name
+     * @param string $fullname
+     * @return array
      */
     public function get_employee_by_fullname($company_name, $fullname)
     {
         $union_sql = $this->_get_union_sql();
         $sql = "SELECT * FROM $union_sql AS Combined 
                 WHERE Company = ? AND Fullname = ?";
-        $query = $this->db->query($sql, array($company_name, $fullname));
-        return $query->result();
+        return $this->db->query($sql, array($company_name, $fullname))->result();
     }
 
     /**
-     * ดึงข้อมูลพนักงานจาก Email ที่มี username (like)
+     * ดึงข้อมูลพนักงานจาก Email (ค้นหาแบบ Like)
+     *
+     * @param string $username
+     * @return object|null
      */
     public function get_employee_by_email_like($username)
     {
@@ -177,17 +205,155 @@ class Employee_model extends CI_Model
         $safe_username = "N" . $this->db->escape('%' . $username . '%');
         $sql = "SELECT TOP 1 * FROM $union_sql AS Combined 
                 WHERE EmailAddress LIKE $safe_username";
-        $query = $this->db->query($sql);
-        return $query->row();
+        return $this->db->query($sql)->row();
     }
 
     /**
-     * อัพเดตข้อมูลพนักงานใน TbContactUser + TbMap
-     * ใช้ N'...' prefix ใน raw SQL เพื่อบังคับ NVARCHAR ให้รองรับภาษาไทย
+     * ดึงพนักงานสำหรับหน้า Admin โดย JOIN TbMap โดยตรง เพื่อให้ได้ MapID
+     *
+     * @param string $company_name
+     * @return array
      */
-    public function update_employee($contact_id, $data)
+    public function get_employees_admin($company_name)
     {
-        // แยก TbMap fields ออกมาก่อน
+        $safe = $this->db->escape($company_name);
+        $sql = "SELECT
+                    tc.UserID, tc.Fullname, tc.ThaiName, tc.TelePhone, tc.EmailAddress, tc.PositionID, tc.UserStatus, tc.UserLogOn, tc.Picture AS picture,
+                    m.MapID, m.SecID,
+                    s.SecName,
+                    d.DeptName,
+                    f.FuncName,
+                    co.Company, co.CompanyID,
+                    p.OrganizeLevel, p.OrganizeOrder, p.FullNameEN AS Position
+                FROM TbContactUser tc
+                INNER JOIN TbMap m ON tc.UserID = m.UserID
+                LEFT JOIN TbSection s ON m.SecID = s.SecID
+                LEFT JOIN TbDepartment d ON s.DeptID = d.DeptID
+                LEFT JOIN TbFunction f ON d.FuncID = f.FuncID
+                LEFT JOIN TbCompany co ON f.CompanyID = co.CompanyID
+                LEFT JOIN TbPosition p ON tc.PositionID = p.PositionID
+                WHERE co.Company = $safe
+                ORDER BY f.FuncName ASC, d.DeptName ASC, s.SecName ASC, tc.Fullname ASC";
+        return $this->db->query($sql)->result();
+    }
+
+    /**
+     * ดึง UserLogOn และ Picture ของพนักงาน (ใช้สำหรับเช็คลบ/เปลี่ยนชื่อรูปภาพ)
+     *
+     * @param int $user_id
+     * @return object|null
+     */
+    public function get_employee_picture_info($user_id)
+    {
+        $this->db->select('UserLogOn, Picture AS picture');
+        $this->db->where('UserID', $user_id);
+        return $this->db->get('TbContactUser')->row();
+    }
+
+    /**
+     * ดึงรายชื่อพนักงาน Active ทั้งหมด สำหรับ Dropdown ในหน้า Map
+     *
+     * @return array
+     */
+    public function get_active_employees_dropdown()
+    {
+        $this->db->select('UserID, Fullname, ThaiName');
+        $this->db->from('TbContactUser');
+        $this->db->where("LTRIM(RTRIM(UserStatus)) = '1'", NULL, FALSE);
+        $this->db->order_by('Fullname', 'ASC');
+        return $this->db->get()->result();
+    }
+
+    /**
+     * ดึงข้อมูลตำแหน่งทั้งหมดจาก TbPosition
+     *
+     * @return array
+     */
+    public function get_all_positions()
+    {
+        $this->db->select('PositionID, FullNameEN');
+        $this->db->from('TbPosition');
+        $this->db->order_by('PositionID', 'ASC');
+        return $this->db->get()->result();
+    }
+
+    /**
+     * ดึงวันที่อัปเดตข้อมูลล่าสุด (จาก SuccessFactors)
+     *
+     * @return string
+     */
+    public function get_last_update_date()
+    {
+        $this->db->select_max('updated_at', 'last_update');
+        $query = $this->db->get('VwShowDataSuccessFactor');
+        $result = $query->row();
+
+        if ($result && $result->last_update) {
+            if (is_object($result->last_update) && method_exists($result->last_update, 'format')) {
+                return $result->last_update->format('d/m/Y');
+            } else {
+                return date('d/m/Y', strtotime($result->last_update));
+            }
+        }
+        return date('d/m/Y');
+    }
+
+    // ==========================================
+    // DATA MUTATION METHODS (INSERT / UPDATE / DELETE)
+    // ==========================================
+
+    /**
+     * อัปเดตข้อมูลส่วนตัวของพนักงาน (TbContactUser และ TbInternal)
+     *
+     * @param int|null $user_id
+     * @param string $email
+     * @param array $profile_data
+     * @param string $internal_no
+     * @param string $mobile_phone
+     * @return bool
+     */
+    public function update_employee_profile_and_internal($user_id, $email, array $profile_data, $internal_no, $mobile_phone)
+    {
+        $this->db->trans_start();
+
+        // 1. อัปเดต TbContactUser ถ้ามี UserID
+        if (!empty($user_id)) {
+            $this->db->where('UserID', $user_id);
+            $this->db->update('TbContactUser', $profile_data);
+        }
+
+        // 2. ตรวจสอบและอัปเดต/เพิ่มใน TbInternal
+        $this->db->where('Email', $email);
+        $q = $this->db->get('TbInternal');
+
+        if ($q->num_rows() > 0) {
+            $this->db->where('Email', $email);
+            $this->db->update('TbInternal', [
+                'internal_no' => $internal_no,
+                'telephone'   => $mobile_phone
+            ]);
+        } else {
+            $this->db->insert('TbInternal', [
+                'Email'       => $email,
+                'internal_no' => $internal_no,
+                'telephone'   => $mobile_phone
+            ]);
+        }
+
+        $this->db->trans_complete();
+        return $this->db->trans_status();
+    }
+
+    /**
+     * อัปเดตข้อมูลพนักงานใน TbContactUser + TbMap
+     * รองรับ Unicode/ภาษาไทย ด้วย N'...' prefix ใน raw SQL
+     *
+     * @param int $contact_id
+     * @param array $data
+     * @return bool
+     */
+    public function update_employee($contact_id, array $data)
+    {
         $map_id  = isset($data['MapID']) ? (int)$data['MapID'] : null;
         $sec_id  = isset($data['SecID']) ? $data['SecID']      : false;
         unset($data['MapID'], $data['SecID']);
@@ -198,12 +364,11 @@ class Employee_model extends CI_Model
         $telephone   = isset($data['TelePhone'])    ? $data['TelePhone']    : null;
         $email       = isset($data['EmailAddress']) ? $data['EmailAddress'] : null;
 
-        // helper: escape single-quote สำหรับ SQL literal
         $esc = function ($s) {
             return str_replace("'", "''", (string)$s);
         };
 
-        // 1. UPDATE TbContactUser ด้วย N'...' prefix เพื่อรองรับ Unicode/ภาษาไทย
+        // 1. UPDATE TbContactUser
         $parts = [];
         if ($fullname    !== null) $parts[] = "Fullname     = N'" . $esc($fullname)    . "'";
         if ($thainame    !== null) $parts[] = "ThaiName     = N'" . $esc($thainame)    . "'";
@@ -220,21 +385,23 @@ class Employee_model extends CI_Model
                 $parts[] = "Picture = N'" . $esc($data['picture']) . "'";
             }
         }
-        if (isset($data['UserStatus']) && $data['UserStatus'] !== null && $data['UserStatus'] !== '')
+        if (isset($data['UserStatus']) && $data['UserStatus'] !== null && $data['UserStatus'] !== '') {
             $parts[] = "UserStatus = N'" . (int)$data['UserStatus'] . "'";
+        }
 
         $result = true;
         if (!empty($parts)) {
             $sql = "UPDATE TbContactUser SET "
                 . implode(', ', $parts)
                 . " WHERE UserID = " . (int)$contact_id;
+
             $db_debug = $this->db->db_debug;
             $this->db->db_debug = FALSE;
             $result = $this->db->query($sql);
             $this->db->db_debug = $db_debug;
         }
 
-        // 2. UPDATE TbMap.SecID เฉพาะ record ที่ตรงกับ MapID
+        // 2. UPDATE TbMap.SecID
         if ($sec_id !== false && !empty($map_id)) {
             $db_debug = $this->db->db_debug;
             $this->db->db_debug = FALSE;
@@ -248,9 +415,12 @@ class Employee_model extends CI_Model
     }
 
     /**
-     * เพิ่มพนักงานใหม่ (รองรับ N'...' prefix สำหรับภาษาไทย)
+     * เพิ่มพนักงานใหม่ลงใน TbContactUser และ TbMap
+     *
+     * @param array $data
+     * @return bool
      */
-    public function insert_employee($data)
+    public function insert_employee(array $data)
     {
         $esc = function ($s) {
             return str_replace("'", "''", (string)$s);
@@ -285,7 +455,6 @@ class Employee_model extends CI_Model
         if ($q_scope && $q_scope->num_rows() > 0 && $q_scope->row()->last_id !== null) {
             $user_id = $q_scope->row()->last_id;
         } else {
-            // Fallback
             $q_ident = $this->db->query("SELECT IDENT_CURRENT('TbContactUser') AS last_id");
             if ($q_ident && $q_ident->num_rows() > 0) {
                 $user_id = $q_ident->row()->last_id;
@@ -306,45 +475,10 @@ class Employee_model extends CI_Model
     }
 
     /**
-     * ดึงพนักงานเพื่อหน้า Admin โดย JOIN TbMap โดยตรง เพื่อให้ได้ MapID
-     */
-    public function get_employees_admin($company_name)
-    {
-        $safe = $this->db->escape($company_name);
-        $sql = "SELECT
-                    tc.UserID, tc.Fullname, tc.ThaiName, tc.TelePhone, tc.EmailAddress, tc.PositionID, tc.UserStatus, tc.UserLogOn, tc.Picture AS picture,
-                    m.MapID, m.SecID,
-                    s.SecName,
-                    d.DeptName,
-                    f.FuncName,
-                    co.Company, co.CompanyID,
-                    p.OrganizeLevel, p.OrganizeOrder, p.FullNameEN AS Position
-                FROM TbContactUser tc
-                INNER JOIN TbMap m ON tc.UserID = m.UserID
-                LEFT JOIN TbSection s ON m.SecID = s.SecID
-                LEFT JOIN TbDepartment d ON s.DeptID = d.DeptID
-                LEFT JOIN TbFunction f ON d.FuncID = f.FuncID
-                LEFT JOIN TbCompany co ON f.CompanyID = co.CompanyID
-                LEFT JOIN TbPosition p ON tc.PositionID = p.PositionID
-                WHERE co.Company = $safe
-                ORDER BY f.FuncName ASC, d.DeptName ASC, s.SecName ASC, tc.Fullname ASC";
-        return $this->db->query($sql)->result();
-    }
-
-    /**
-     * ดึงข้อมูลตำแหน่งทั้งหมดจาก TbPosition
-     */
-    public function get_all_positions()
-    {
-        $this->db->select('PositionID, FullNameEN');
-        $this->db->from('TbPosition');
-        $this->db->order_by('PositionID', 'ASC');
-        $query = $this->db->get();
-        return $query->result();
-    }
-
-    /**
      * ลบพนักงาน
+     *
+     * @param int $user_id
+     * @return bool
      */
     public function delete_employee($user_id)
     {
@@ -354,24 +488,5 @@ class Employee_model extends CI_Model
         $result = $this->db->delete('TbContactUser');
         $this->db->db_debug = $db_debug;
         return $result;
-    }
-
-    /**
-     * ดึงวันที่อัพเดตล่าสุด
-     */
-    public function get_last_update_date()
-    {
-        $this->db->select_max('updated_at', 'last_update');
-        $query = $this->db->get('VwShowDataSuccessFactor');
-        $result = $query->row();
-
-        if ($result && $result->last_update) {
-            if (is_object($result->last_update) && method_exists($result->last_update, 'format')) {
-                return $result->last_update->format('d/m/Y');
-            } else {
-                return date('d/m/Y', strtotime($result->last_update));
-            }
-        }
-        return date('d/m/Y');
     }
 }
