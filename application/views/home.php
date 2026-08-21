@@ -185,7 +185,7 @@ $this->load->view('partials/header', ['page_title' => 'ATTG Contact']);
               </select>
             </div>
             <div class="form-group">
-              <label class="mr-2 font-weight-normal mb-0" style="white-space: nowrap;">Function :</label>
+              <label class="mr-2 font-weight-normal mb-0" style="white-space: nowrap;">Division :</label>
               <select class="form-control form-control-sm custom-select" id="dept" style="width: 250px;">
                 <option>-All-</option>
                 <?php if (!empty($departments)): ?>
@@ -363,7 +363,7 @@ $this->load->view('partials/header', ['page_title' => 'ATTG Contact']);
           $.each(dataArray, function(i, row) {
             if (row.FuncName !== curFunc) {
               var fDisplay = row.FuncName ? escapeHtml(row.FuncName) : "(ไม่ระบุ)";
-              html += '<tr class="tr-function"><td colspan="6" style="border: 1px solid #6c757d;">Function : ' + fDisplay + '</td></tr>';
+              html += '<tr class="tr-function"><td colspan="6" style="border: 1px solid #6c757d;">Division : ' + fDisplay + '</td></tr>';
               curFunc = row.FuncName;
               curDept = null;
               curSec = null;
@@ -387,7 +387,7 @@ $this->load->view('partials/header', ['page_title' => 'ATTG Contact']);
         // Normal display with employees
         $.each(dataArray, function(i, row) {
           if (row.FuncName && row.FuncName !== curFunc) {
-            html += '<tr class="tr-function"><td colspan="6" style="border: 1px solid #6c757d;">Function : ' + escapeHtml(row.FuncName) + '</td></tr>';
+            html += '<tr class="tr-function"><td colspan="6" style="border: 1px solid #6c757d;">Division : ' + escapeHtml(row.FuncName) + '</td></tr>';
             curFunc = row.FuncName;
             curDept = null;
             curSec = null;

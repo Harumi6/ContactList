@@ -7,6 +7,8 @@ defined('BASEPATH') OR exit('No direct script access allowed');
  *
  * @property CI_DB_query_builder $db
  * @property CI_Input $input
+ * @property CI_Loader $load
+ * @property CI_Output $output
  * @property CI_Session $session
  * @property CI_Upload $upload
  * @property Employee_model $Employee_model
